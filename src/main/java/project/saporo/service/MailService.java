@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 
 import static project.saporo.code.TimeConst.KST;
@@ -23,7 +22,6 @@ public class MailService {
 
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
-    private final ExchangeRateService exchangeRateService;
 
     @Value("${mail-receiver}")
     private String mailReceiver;
@@ -34,17 +32,15 @@ public class MailService {
     @Value("${min-value}")
     private Double minValue;
 
-    public void send() {
-        BigDecimal jpyToKrw = exchangeRateService.getJpyToKrwRate();
-
-        String rateFormatted = String.format("1 JPY = %s KRW", jpyToKrw);
+    public void send(Double jpyToKrwRate) {
+        String rateFormatted = String.format("1 JPY = %s KRW", jpyToKrwRate);
         String sentAt = ZonedDateTime.now(KST).format(KST_PRETTY);
 
         Context ctx = new Context();
         ctx.setVariable("rateFormatted", rateFormatted);
         ctx.setVariable("sentAt", sentAt);
 
-        ctx.setVariable("rate", jpyToKrw);
+        ctx.setVariable("rate", jpyToKrwRate);
         ctx.setVariable("minValue", minValue);
         ctx.setVariable("maxValue", maxValue);
 

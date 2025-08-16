@@ -6,8 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Map;
 
 @Slf4j
@@ -17,7 +15,7 @@ public class ExchangeRateService {
 
     private final RestTemplate restTemplate;
 
-    private BigDecimal getKrwToJpyRate() {
+    private Double getKrwToJpyRate() {
         String url = "https://open.er-api.com/v6/latest/KRW";
         ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
 
@@ -31,11 +29,15 @@ public class ExchangeRateService {
             throw new IllegalStateException("JPY 환율이 없습니다.");
         }
 
-        return new BigDecimal(rates.get("JPY").toString());
+        return Double.valueOf(rates.get("JPY").toString());
     }
 
-    public BigDecimal getJpyToKrwRate() {
-        BigDecimal jpyPerKrw = getKrwToJpyRate();
-        return BigDecimal.ONE.divide(jpyPerKrw, 2, RoundingMode.HALF_UP);
+    public Double getJpyToKrwRate() {
+        double jpyPerKrw = getKrwToJpyRate();
+        if (jpyPerKrw == 0.0) {
+            throw new IllegalStateException("JPY 환율이 0입니다.");
+        }
+
+        return Math.round((1.0 / jpyPerKrw) * 100.0) / 100.0;
     }
 }
