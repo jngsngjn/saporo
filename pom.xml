@@ -70,19 +70,13 @@
                     <exclude>logback-spring.xml</exclude>
                 </excludes>
             </resource>
-
-            <resource>
-                <directory>src/main/java</directory>
-                <excludes>
-                    <exclude>project/saporo/controller/TestController.java</exclude>
-                </excludes>
-            </resource>
         </resources>
 
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
@@ -90,6 +84,12 @@
                             <artifactId>lombok</artifactId>
                         </path>
                     </annotationProcessorPaths>
+                    <excludes>
+                        <!-- src/main/java 기준 -->
+                        <exclude>project/saporo/controller/TestController.java</exclude>
+                        <!-- 또는 -->
+                        <!-- <exclude>**/TestController.java</exclude> -->
+                    </excludes>
                 </configuration>
             </plugin>
 
