@@ -18,14 +18,16 @@ get_pid() {
 start_app() {
   PID=$(get_pid)
   if [ -n "$PID" ]; then
-    echo "App is already running (PID: $PID)"
-  else
-    echo "Starting app..."
-    nohup java -Xms400m -Xmx400m -Dspring.config.location="$RESOURCE_DIR/application.yml" \
-               -Dlogging.config="$RESOURCE_DIR/logback.xml" \
-               -jar "$JAR_FILE" > "$LOG_DIR/app.out" 2>&1 &
-    echo "Started."
+    echo "App is already running (PID: $PID). Restarting..."
+    kill "$PID"
+    sleep 1
   fi
+
+  echo "Starting app..."
+  nohup java -Xms300m -Xmx300m -Dspring.config.location="$RESOURCE_DIR/application.yml" \
+             -Dlogging.config="$RESOURCE_DIR/logback-spring.xml" \
+             -jar "$JAR_FILE" > "$LOG_DIR/app.out" 2>&1 &
+  echo "Started."
 }
 
 # 종료
