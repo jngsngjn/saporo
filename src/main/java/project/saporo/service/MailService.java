@@ -9,7 +9,9 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import project.saporo.repository.RateFileRepository;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
 import static project.saporo.code.TimeConst.KST;
@@ -22,6 +24,7 @@ public class MailService {
 
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
+    private final RateFileRepository rateFileRepository;
 
     @Value("${mail-receiver}")
     private String mailReceiver;
@@ -33,16 +36,20 @@ public class MailService {
     private Double minValue;
 
     public void send(Double jpyToKrwRate) {
-        String rateFormatted = String.format("1 JPY = %s KRW", jpyToKrwRate);
         String sentAt = ZonedDateTime.now(KST).format(KST_PRETTY);
 
         Context ctx = new Context();
-        ctx.setVariable("rateFormatted", rateFormatted);
         ctx.setVariable("sentAt", sentAt);
-
         ctx.setVariable("rate", jpyToKrwRate);
         ctx.setVariable("minValue", minValue);
         ctx.setVariable("maxValue", maxValue);
+
+        // 어제 정보가 있다면 추가
+        rateFileRepository.find(LocalDate.now(KST).minusDays(1)).ifPresent(yesterday -> {
+            Double yesterdayRate = yesterday.rate();
+            log.info("Yesterday rate: {}", yesterdayRate);
+            ctx.setVariable("yesterdayRate", yesterdayRate);
+        });
 
         String html = templateEngine.process("mail/jpy-rate", ctx);
 

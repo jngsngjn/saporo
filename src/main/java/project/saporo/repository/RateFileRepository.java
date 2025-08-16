@@ -27,16 +27,25 @@ public class RateFileRepository {
         this.objectMapper = objectMapper;
     }
 
-    public void save(DailyRate dailyRate) throws IOException {
+    public void save(DailyRate dailyRate) {
         Path target = baseDir.resolve(dailyRate.date().toString() + ".json");
-        objectMapper.writerWithDefaultPrettyPrinter().writeValue(target.toFile(), dailyRate);
+        try {
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(target.toFile(), dailyRate);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         log.info("Daily rate saved to {}", target);
     }
 
-    public Optional<DailyRate> find(LocalDate date) throws IOException {
+    public Optional<DailyRate> find(LocalDate date) {
         Path target = baseDir.resolve(date.toString() + ".json");
         if (!Files.exists(target)) return Optional.empty();
-        DailyRate dr = objectMapper.readValue(target.toFile(), DailyRate.class);
+        DailyRate dr;
+        try {
+            dr = objectMapper.readValue(target.toFile(), DailyRate.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return Optional.of(dr);
     }
 }
