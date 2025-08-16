@@ -3,6 +3,7 @@ package project.saporo.service;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,15 @@ public class MailService {
     private final TemplateEngine templateEngine;
     private final ExchangeRateService exchangeRateService;
 
+    @Value("${mail-receiver}")
+    private String mailReceiver;
+
+    @Value("${max-value}")
+    private Double maxValue;
+
+    @Value("${min-value}")
+    private Double minValue;
+
     public void send() {
         BigDecimal jpyToKrw = exchangeRateService.getJpyToKrwRate();
 
@@ -34,12 +44,16 @@ public class MailService {
         ctx.setVariable("rateFormatted", rateFormatted);
         ctx.setVariable("sentAt", sentAt);
 
+        ctx.setVariable("rate", jpyToKrw);
+        ctx.setVariable("minValue", minValue);
+        ctx.setVariable("maxValue", maxValue);
+
         String html = templateEngine.process("mail/jpy-rate", ctx);
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setTo("wjdtjdwls98@gmail.com");
+            helper.setTo(mailReceiver);
             helper.setSubject("[환율] 엔화(JPY) 환율 알림");
             helper.setText(html, true);
             mailSender.send(message);
