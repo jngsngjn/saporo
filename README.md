@@ -7,6 +7,16 @@
 - 스케줄: Spring Scheduling(Asia/Seoul)
 - 저장소: 일자별 JSON 파일(기본: ./rates)
 
+---
+
+### 스크린샷
+엔화 알림 메일 예시
+<img src="img/1.png" alt="스크린샷 1" width="500">
+<img src="img/2.png" alt="스크린샷 2" width="500">
+<img src="img/3.png" alt="스크린샷 3" width="500">
+<img src="img/4.png" alt="스크린샷 4" width="500">
+
+---
 
 ## 주요 기능
 - 일일 알림: 오늘의 1 JPY = KRW 환율을 메일로 전송합니다.
