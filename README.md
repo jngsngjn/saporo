@@ -10,7 +10,7 @@
 ---
 
 ### 스크린샷
-엔화 알림 메일 예시
+엔화 알림 메일 예시 <br>
 <img src="img/1.png" alt="스크린샷 1" width="500">
 <img src="img/2.png" alt="스크린샷 2" width="500">
 <img src="img/3.png" alt="스크린샷 3" width="500">
