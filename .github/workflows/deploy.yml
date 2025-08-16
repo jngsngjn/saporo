@@ -39,6 +39,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: target/*.jar
           target: /home/rocky/saporo/lib/
+          strip_components: 1
 
       - name: Restart application
         uses: appleboy/ssh-action@v1.0.3
