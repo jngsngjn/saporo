@@ -35,11 +35,8 @@ public class ScheduleService {
             DailyRate todayRate = new DailyRate(today, jpyToKrwRate);
             rateFileRepository.save(todayRate);
 
-            // ---------------------------
-            // 테스트용 조건: 여기만 바꿔가며 테스트하면 됨
-            // 예: DayOfWeek.MONDAY, DayOfWeek.SATURDAY, 또는 if (true) 등
+            // 매주 월요일
             if (today.getDayOfWeek() == DayOfWeek.MONDAY) {
-                // ---------------------------
 
                 // 최근 7일 (오늘 포함, 과거 6일)
                 LocalDate start = today.minusDays(6);
@@ -78,7 +75,7 @@ public class ScheduleService {
                 }
 
             } else {
-                // 평일(월요일 외 또는 조건 미충족): 일일 메일
+                // 월요일이 아니면
                 mailService.sendDaily(jpyToKrwRate);
                 log.info("Daily mail sent for {}", today);
             }
