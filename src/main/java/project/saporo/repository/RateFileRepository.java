@@ -31,23 +31,25 @@ public class RateFileRepository {
     }
 
     public void save(DailyRate dailyRate) {
-        Path target = baseDir.resolve(dailyRate.date().toString() + JSON_FILE_SUFFIX);
+        Path path = baseDir.resolve(dailyRate.date().toString() + JSON_FILE_SUFFIX);
         try {
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(target.toFile(), dailyRate);
-            log.info("Daily rate saved to {}", target);
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(path.toFile(), dailyRate);
+            log.info("Daily rate saved to {}", path);
         } catch (IOException e) {
-            log.error("Failed to save daily rate to {}: {}", target, e.getMessage());
+            log.error("Failed to save daily rate to {}: {}", path, e.getMessage());
         }
     }
 
     public Optional<DailyRate> find(LocalDate date) {
-        Path target = baseDir.resolve(date.toString() + JSON_FILE_SUFFIX);
-        if (!Files.exists(target)) return Optional.empty();
+        Path path = baseDir.resolve(date.toString() + JSON_FILE_SUFFIX);
+        if (!Files.exists(path)) {
+            return Optional.empty();
+        }
         try {
-            DailyRate dr = objectMapper.readValue(target.toFile(), DailyRate.class);
-            return Optional.ofNullable(dr);
+            DailyRate dailyRate = objectMapper.readValue(path.toFile(), DailyRate.class);
+            return Optional.ofNullable(dailyRate);
         } catch (IOException e) {
-            log.error("Failed to read daily rate from {}: {}", target, e.getMessage());
+            log.error("Failed to read daily rate from {}: {}", path, e.getMessage());
             return Optional.empty();
         }
     }
@@ -61,19 +63,21 @@ public class RateFileRepository {
             return Collections.emptyList();
         }
 
-        List<DailyRate> out = new ArrayList<>();
+        List<DailyRate> result = new ArrayList<>();
         for (LocalDate date = startInclusive; !date.isAfter(endInclusive); date = date.plusDays(1)) {
             Path path = baseDir.resolve(date + JSON_FILE_SUFFIX);
             if (!Files.exists(path)) continue;
             try {
                 DailyRate dailyRate = objectMapper.readValue(path.toFile(), DailyRate.class);
-                if (dailyRate != null) out.add(dailyRate);
+                if (dailyRate != null) {
+                    result.add(dailyRate);
+                }
             } catch (IOException e) {
                 log.warn("Skipping date {} due to read error: {}", date, e.getMessage());
             }
         }
-        out.sort(Comparator.comparing(DailyRate::date));
-        return out;
+        result.sort(Comparator.comparing(DailyRate::date));
+        return result;
     }
 
     public List<LocalDate> listAllDates() {
@@ -85,7 +89,9 @@ public class RateFileRepository {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(baseDir, "*" + JSON_FILE_SUFFIX)) {
             for (Path path : stream) {
                 String name = path.getFileName().toString();
-                if (!name.endsWith(JSON_FILE_SUFFIX)) continue;
+                if (!name.endsWith(JSON_FILE_SUFFIX)) {
+                    continue;
+                }
                 String datePart = name.substring(0, name.length() - 5);
                 try {
                     LocalDate date = LocalDate.parse(datePart);
@@ -107,11 +113,11 @@ public class RateFileRepository {
         if (date == null) {
             return false;
         }
-        Path target = baseDir.resolve(date + JSON_FILE_SUFFIX);
+        Path path = baseDir.resolve(date + JSON_FILE_SUFFIX);
         try {
-            return Files.deleteIfExists(target);
+            return Files.deleteIfExists(path);
         } catch (IOException e) {
-            log.warn("Failed to delete file {}: {}", target, e.getMessage());
+            log.warn("Failed to delete file {}: {}", path, e.getMessage());
             return false;
         }
     }

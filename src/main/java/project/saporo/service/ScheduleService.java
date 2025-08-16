@@ -7,7 +7,12 @@ import org.springframework.stereotype.Service;
 import project.saporo.dto.DailyRate;
 import project.saporo.repository.RateFileRepository;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.List;
+
+import static org.springframework.util.CollectionUtils.isEmpty;
+import static project.saporo.code.TimeConst.KST;
 
 @Slf4j
 @Service
@@ -20,27 +25,66 @@ public class ScheduleService {
 
     @Scheduled(cron = "0 0 10 * * *", zone = "Asia/Seoul")
     public void sendDailyJpyRateEmail() {
+        LocalDate today = LocalDate.now(KST);
+
         try {
-            // 1. 환율 정보 얻기
+            // 1) 환율 조회
             Double jpyToKrwRate = exchangeRateService.getJpyToKrwRate();
 
-            // 2. 파일 저장
-            DailyRate dailyRate = new DailyRate(LocalDate.now(), jpyToKrwRate);
-            rateFileRepository.save(dailyRate);
+            // 2) 오늘 파일 저장
+            DailyRate todayRate = new DailyRate(today, jpyToKrwRate);
+            rateFileRepository.save(todayRate);
 
-            /*
-            여기에 추가
-            - 만약 오늘이 월요일이라면 한 주간 데이터 집계 정보도 함께 전송 (이메일 템플릿이 다름)
-            - 월요일이 아니면 mailService.send(jpyToKrwRate);
-            - 월요일이면 다른 메서드 사용
-            - 그리고 나서 지난 일주일 정보는 삭제 (월요일까지 일주일치 정보 모으고, 월요일이 되면 오늘, 전일 정보만 남기고 삭제)
-             */
+            // ---------------------------
+            // 테스트용 조건: 여기만 바꿔가며 테스트하면 됨
+            // 예: DayOfWeek.MONDAY, DayOfWeek.SATURDAY, 또는 if (true) 등
+            if (today.getDayOfWeek() == DayOfWeek.MONDAY) {
+                // ---------------------------
 
-            // 3. 메일 발송
-            mailService.send(jpyToKrwRate);
-            log.info("Daily JPY rate email triggered by scheduler.");
+                // 최근 7일 (오늘 포함, 과거 6일)
+                LocalDate start = today.minusDays(6);
+
+                List<DailyRate> week = rateFileRepository.findRange(start, today);
+
+                if (isEmpty(week)) {
+                    log.info("No weekly data for {} ~ {} - sending daily mail instead", start, today);
+                    mailService.sendDaily(jpyToKrwRate);
+                } else {
+                    try {
+                        mailService.sendWeekly(week);
+                        log.info("Weekly mail sent for {} ~ {}", start, today);
+                    } catch (Exception e) {
+                        log.error("Failed to send weekly mail, falling back to daily mail: {}", e.getMessage(), e);
+                        mailService.sendDaily(jpyToKrwRate);
+                    }
+                }
+
+                // 삭제: today와 yesterday(오늘·전일)만 남기고 이전 파일 삭제
+                LocalDate keepFrom = today.minusDays(1);
+                try {
+                    List<LocalDate> allDates = rateFileRepository.listAllDates();
+                    for (LocalDate date : allDates) {
+                        if (date.isBefore(keepFrom)) {
+                            boolean deleted = rateFileRepository.delete(date);
+                            if (deleted) {
+                                log.info("Deleted old rate file for {}", date);
+                            } else {
+                                log.warn("Could not delete file for {} (maybe not exist)", date);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Cleanup (delete old files) failed: {}", e.getMessage(), e);
+                }
+
+            } else {
+                // 평일(월요일 외 또는 조건 미충족): 일일 메일
+                mailService.sendDaily(jpyToKrwRate);
+                log.info("Daily mail sent for {}", today);
+            }
+
         } catch (Exception e) {
-            log.error("Failed to send daily JPY rate email", e);
+            log.error("Failed to run scheduled job: {}", e.getMessage(), e);
         }
     }
 }
