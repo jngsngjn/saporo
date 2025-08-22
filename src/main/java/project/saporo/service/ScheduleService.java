@@ -2,6 +2,8 @@ package project.saporo.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import project.saporo.dto.DailyRate;
@@ -23,7 +25,7 @@ public class ScheduleService {
     private final RateFileRepository rateFileRepository;
     private final ExchangeRateService exchangeRateService;
 
-    @Scheduled(cron = "0 0 10 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "${daily-cron:0 0 10 * * *}", zone = "Asia/Seoul")
     public void sendDailyJpyRateEmail() {
         LocalDate today = LocalDate.now(KST);
 
